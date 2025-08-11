@@ -1,6 +1,7 @@
 package com.example.a2048
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -8,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,8 +17,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -28,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,51 +58,117 @@ class MainActivity : ComponentActivity() {
 fun Game2048() {
     var board by remember { mutableStateOf(newBoard()) }
     var score by remember { mutableStateOf(0) }
+    val context = LocalContext.current
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(16.dp)
     ) {
-        Text("2048 Game", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("Score: $score", fontSize = 20.sp, color = Color.White)
-        Spacer(modifier = Modifier.height(16.dp))
+        // Main Game UI in Column
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("2048 Game", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Score: $score", fontSize = 20.sp, color = Color.White)
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Board
-        for (row in board) {
-            Row {
-                for (cell in row) {
-                    Tile(cell)
+            for (row in board) {
+                Row {
+                    for (cell in row) {
+                        Tile(cell)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Controls
+            Row(horizontalArrangement = Arrangement.Center) {
+                CircleButton("↑") {
+                    val (b, s) = moveUp(board)
+                    if (b != board) {
+                        board = addRandomTile(b)
+                        score += s
+                        if (isGameOver(board)) {
+                            Toast.makeText(context, "GAME OVER! Score: $score", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            }
+
+            Row(horizontalArrangement = Arrangement.Center) {
+                CircleButton("←") {
+                    val (b, s) = moveLeft(board)
+                    if (b != board) {
+                        board = addRandomTile(b)
+                        score += s
+                        if (isGameOver(board)) {
+                            Toast.makeText(context, "GAME OVER! Score: $score", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.width(80.dp))
+                CircleButton("→") {
+                    val (b, s) = moveRight(board)
+                    if (b != board) {
+                        board = addRandomTile(b)
+                        score += s
+                        if (isGameOver(board)) {
+                            Toast.makeText(context, "GAME OVER! Score: $score", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            }
+
+            Row(horizontalArrangement = Arrangement.Center) {
+                CircleButton("↓") {
+                    val (b, s) = moveDown(board)
+                    if (b != board) {
+                        board = addRandomTile(b)
+                        score += s
+                        if (isGameOver(board)) {
+                            Toast.makeText(context, "GAME OVER! Score: $score", Toast.LENGTH_LONG).show()
+                        }
+                    }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Controls
-        Row(horizontalArrangement = Arrangement.Center) {
-            Button(onClick = { val (b, s) = moveUp(board); if (b != board) { board = addRandomTile(b); score += s } }) {
-                Text("↑")
-            }
-        }
-        Row(horizontalArrangement = Arrangement.Center) {
-            Button(onClick = { val (b, s) = moveLeft(board); if (b != board) { board = addRandomTile(b); score += s } }) {
-                Text("←")
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = { val (b, s) = moveRight(board); if (b != board) { board = addRandomTile(b); score += s } }) {
-                Text("→")
-            }
-        }
-        Row(horizontalArrangement = Arrangement.Center) {
-            Button(onClick = { val (b, s) = moveDown(board); if (b != board) { board = addRandomTile(b); score += s } }) {
-                Text("↓")
-            }
+        // ✅ Restart button in Box scope
+        Button(
+            onClick = {
+                board = newBoard()
+                score = 0
+                Toast.makeText(context, "New Game", Toast.LENGTH_SHORT).show()
+            },
+            shape = RoundedCornerShape(50),
+            colors = ButtonDefaults.buttonColors(Color(0xFF8BC34A)),
+            modifier = Modifier
+                .align(Alignment.BottomEnd) // works now
+                .padding(8.dp)
+        ) {
+            Text("Restart", color = Color.White, fontWeight = FontWeight.Bold)
         }
     }
 }
+
+@Composable
+fun CircleButton(text: String, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        shape = CircleShape,
+        modifier = Modifier.size(64.dp),
+        contentPadding = PaddingValues(0.dp)
+    ) {
+        Text(text, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+    }
+}
+
 
 @Composable
 fun Tile(value: Int) {
@@ -191,4 +262,25 @@ fun moveDown(board: List<List<Int>>): Pair<List<List<Int>>, Int> {
     val (moved, score) = moveRight(transposed)
     val restored = (0..3).map { row -> (0..3).map { col -> moved[col][row] } }
     return Pair(restored, score)
+}
+
+fun isGameOver(board: List<List<Int>>): Boolean {
+    // Check for any empty cells
+    if (board.any { row -> row.any { it == 0 } }) return false
+
+    // Check for possible merges horizontally
+    for (r in 0..3) {
+        for (c in 0..2) {
+            if (board[r][c] == board[r][c + 1]) return false
+        }
+    }
+
+    // Check for possible merges vertically
+    for (c in 0..3) {
+        for (r in 0..2) {
+            if (board[r][c] == board[r + 1][c]) return false
+        }
+    }
+
+    return true // No moves left
 }
